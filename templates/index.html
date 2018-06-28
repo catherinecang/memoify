@@ -5,6 +5,8 @@
 </head>
 
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+<link rel= "stylesheet" type= "text/css" href= "../static/style.css?ver=<?php echo time();?>">
+
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
@@ -16,13 +18,61 @@
           <div class="text-center">
           <h1 class="display-3" style="font-size: 100px; font-family: proxima_nova,'Helvetica Neue',Helvetica,Arial,sans-serif; color:#e2edff;">Memoify</h1>
           <p style="font-size:25px; font-family: proxima_nova,'Helvetica Neue',Helvetica,Arial,sans-serif; color:#e2edff;">What better way to send a message than by creating a playlist?</p>
-          <form method="POST">
+          <form method="POST" action="#albums">
           <input class="form-control" placeholder="Message" name="message" id="message" required></br>
           
           <p><input class="btn btn-primary btn-lg" type="submit" value="Get Started" name="action">
         </p>
           </div>
         </div>
+      </form>
+  </div>
+{% if load == True %}
+<div class="all">
+  <div class="overview__albums" id="albums">
+    {% for p in playlists %}
+  <div class="album">
+    <div class="album__info">
+    <div class="album__info__meta">
+    <div class="album__name"> {{message}}</div>
+  </br>
+        <div class="album__actions">
+          <a href="https://accounts.spotify.com/authorize?client_id=ab850d0e231e4fe69a0ee40e95792610&response_type=token&scope=playlist-modify-private&redirect_uri=http%3A//127.0.0.1%3A5000/callback">
+          <button id='save' class="button-light save">Save</button>
+        </a>
+        </div>
+        </div>
+    </div>
+      <div class="album__tracks">                  
+          <div class="tracks">                     
+            <div class="tracks__heading">                      
+              <div class="tracks__heading__title">TITLE</div>                      
+              <div class="tracks__heading__artist">ARTIST</div>                      
+              <div class="tracks__heading__length">
+                <i class="ion-ios-stopwatch-outline"></i>                          
+              </div>                      
+              <div class="tracks__heading__popularity">                        
+                <i class="ion-thumbsup"></i>                          
+              </div>                        
+            </div>
+            
+          {% for song in p %}
+           <div class="track">
+            <div class="track__title"> {{song['name']}}</div>
+                  <div class="track__artist"> {{song['artists'][0]['name']}} </div>
+                </div>
+          {% endfor %}
+
+        </div>
+    </div>
+  </div>
+  {% endfor %} 
+  </div>
 </div>
+{% endif %}
 </body>
+
+<script>
+
+</script>
 </html>

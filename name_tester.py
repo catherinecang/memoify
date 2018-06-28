@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, url_for
 
 import spotipy 
 import spotipy.util as util
@@ -26,45 +26,42 @@ scc = SpotifyClientCredentials(SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET)
 def index():
 	if request.method == 'POST':
 		message = request.form['message']
-		return redirect("/"+message)
-	return render_template('index.html')
+		return redirect((url_for("post_tracks", message=message)))
+	return render_template('index.html', load=False)
 
 @functools.lru_cache()
 def find_track(name):
-	"""token = util.prompt_for_user_token("catherinecang",'user-library-read',client_id='ab850d0e231e4fe69a0ee40e95792610',
-														client_secret='c372bfb8f8a54e529c3255f5c4211664',redirect_uri='http://127.0.0.1:5000/callback')
-				if token:
-					spotify = spotipy.Spotify(auth=token)"""
+	commons = load_common_words()
+	if name in commons.keys():
+		return commons[name]
 	sp = spotipy.Spotify(client_credentials_manager=scc)
 	res = sp.search(q=name, type="track", limit=50)
 	for r in res['tracks']['items']:
+		print(r['name'])
 		if r['name'].lower() == name.lower():
 			return r
-"""	url = 'https://api.spotify.com/v1/search?q={}&type=track&limit=50'.format(name)
-	response = requests.get(url, headers=head).json()
-	for r in response['tracks']['items']:
-		if r['name'].lower() == name.lower():
-			return r
-	for k in range(3):
-		url = 'https://api.spotify.com/v1/search?q={}&type=track&offset={}&limit=50'.format(name, 50*(k+1))
-		response = requests.get(url, headers=head).json()
-		for r in response['tracks']['items']:
-			if r['name'].lower() == name.lower():
-				return r"""
+	for k in range(1,4):
+		res = sp.search(q=name, type="track", limit=50, offset=50*k)
+		try:
+			for r in res['tracks']['items']:
+				print(r['name'])
+				if r['name'].lower() == name.lower():
+					return r
+		except NameError:
+			return None
 
-def get_tracks(full_str):
-	full_str = full_str.lower()
-	str_split = full_str.split()
+def get_tracks(message):
+	message = message.lower()
+	str_split = message.split()
 	track_lst = []
-	if not full_str:
+	if not message:
 		return []
 	elif len(str_split) == 1:
-		return [find_track(full_str)]
+		return [find_track(message)]
 	while str_split:
 		curr_str = str_split[0]
 		saved = curr_str
 		print("aaa", str_split, saved)
-
 		for i in range(1, min(3, len(str_split))):
 			curr_str += ' ' + str_split[i]
 			print(curr_str, i)
@@ -80,16 +77,29 @@ def get_tracks(full_str):
 		print(str_split)
 	return track_lst
 
-@app.route("/<message>")
-def get_tracks_r(full_str):
-	full_str = full_str.lower()
-	str_split = full_str.split()
+@app.route("/<message>", methods=['GET', 'POST'])
+def post_tracks(message):
+	if request.method == 'POST':
+		message = request.form['message']
+		return redirect((url_for("post_tracks", message=message)))
+	track_lst = get_tracks_r(message)
+	return render_template("index.html", load=True, playlists=track_lst, message=message)
+	#return render_template("playlists.html", playlists='asdf')
+
+def get_tracks_r(message):
+	message = message.lower()
+	str_split = message.split()
 	track_lst = []
-	if not full_str:
+	if not message:
 		return []
 	elif len(str_split) == 1:
-		return [[find_track(full_str)]]
+		message = find_track(message)
+		if message:
+			return [[message]]
+		return []
 	for i in range(1, min(4, len(str_split)+1)):
+		if len(track_lst) > 7:
+			break
 		first = find_track(list_to_str(str_split[:i]))
 		if first:
 			if i == len(str_split):
@@ -103,7 +113,11 @@ def get_tracks_r(full_str):
 def list_to_str(lst):
 	return ' '.join(lst)
 
-
+def login_url():
+	from urllib import parse as parse
+	encoded_redir = parse.quote(SPOTIPY_REDIRECT_URI.encode("utf-8"))
+	url = 'https://accounts.spotify.com/authorize?client_id=' + SPOTIPY_CLIENT_ID + '&response_type=token' +'&scope=playlist-modify-private' +'&redirect_uri=' + encoded_redir
+	return url
 def save_common_words():
 	common_lst = {}
 	url = 'https://api.spotify.com/v1/tracks/5cIZoKmBiFgjabaBG0D9fO'
