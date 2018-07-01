@@ -16,7 +16,7 @@ head = {'Authorization': 'Bearer {}'.format(access_token)}
 
 spotify = spotipy.Spotify()
 
-SPOTIPY_CLIENT_ID=''
+SPOTIPY_CLIENT_ID='ab850d0e231e4fe69a0ee40e95792610'
 SPOTIPY_CLIENT_SECRET=''
 SPOTIPY_REDIRECT_URI='http://127.0.0.1:5000/callback'
 
@@ -27,7 +27,11 @@ def index():
 	if request.method == 'POST':
 		message = request.form['message']
 		return redirect((url_for("post_tracks", message=message)))
-	return render_template('index.html', load=False)
+	return render_template('index.html', load=False, leng=0)
+
+@app.route('/callback', methods=['GET', 'POST'])
+def callback():
+	return render_template('save_playlist.html')
 
 @functools.lru_cache()
 def find_track(name):
@@ -37,14 +41,12 @@ def find_track(name):
 	sp = spotipy.Spotify(client_credentials_manager=scc)
 	res = sp.search(q=name, type="track", limit=50)
 	for r in res['tracks']['items']:
-		print(r['name'])
 		if r['name'].lower() == name.lower():
 			return r
 	for k in range(1,4):
 		res = sp.search(q=name, type="track", limit=50, offset=50*k)
 		try:
 			for r in res['tracks']['items']:
-				print(r['name'])
 				if r['name'].lower() == name.lower():
 					return r
 		except NameError:
@@ -83,7 +85,7 @@ def post_tracks(message):
 		message = request.form['message']
 		return redirect((url_for("post_tracks", message=message)))
 	track_lst = get_tracks_r(message)
-	return render_template("index.html", load=True, playlists=track_lst, message=message)
+	return render_template("index.html", load=True, playlists=track_lst, message=message, data=json.dumps(track_lst), leng=len(track_lst))
 	#return render_template("playlists.html", playlists='asdf')
 
 def get_tracks_r(message):

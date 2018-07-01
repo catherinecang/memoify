@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head></head>
+<link rel= "stylesheet" type= "text/css" href= "../static/style.css?ver=<?php echo time();?>">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
+<body class="all">
+	<div>
+		<h1 class="tracks__title" style="color:white; text-align: center;"> Save playlist here </h1>
+	</div>
+	<div> <p style="text-align: center; color:white"> Your playlist has been generated </p></div>
+</br>
+	<div style="justify-content: center; display:flex;">
+
+		<button id="post_playlist" class="button-dark" style="text-align:center;font-size:20px; position: absolute; width:150px; height:40px; top:50%;"> save  
+		</button>
+		<button id="open_playlist" class = "button-dark" style="text-align:center;font-size:20px; position: absolute; width:150px; height:40px; top:50%;">
+		 open </button>
+	</div>
+
+</body>
+
+<script>
+var token='';
+var user_id='';
+var uri ='';
+var play_id = '';
+var play_link = '';
+var songs = JSON.parse(localStorage.getItem('playlist'));
+var title = localStorage.getItem('name');
+$("#post_playlist").click(function() {
+	makePlaylist();
+	$("#post_playlist").hide();
+	$("#open_playlist").show();
+});
+$("#open_playlist").click(function() {
+	location.href = play_url;
+})
+
+function callSpotify(url, data) {
+    return $.ajax(url, {
+        dataType: 'json',
+        data: data,
+        headers: {
+            'Authorization': 'Bearer ' + token
+        }
+    });
+}
+
+function postSpotify(url, json, callback) {
+    $.ajax(url, {
+        type: "POST",
+        data: JSON.stringify(json),
+        dataType: 'json',
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        },
+        success: function(r) {
+            callback(true, r);
+        },
+        error: function(r) {
+            if (r.status >= 200 && r.status < 300) {
+                callback(true, r);
+            } else {
+                callback(false, r);
+            }
+        }
+    });
+}
+
+function authenticate() {
+	var hash = location.hash.replace(/#/g, '');
+	    var all = hash.split('&');
+	    var args = {};
+	    all.forEach(function(keyvalue) {
+	        var idx = keyvalue.indexOf('=');
+	        var key = keyvalue.substring(0, idx);
+	        var val = keyvalue.substring(idx + 1);
+	        args[key] = val;
+	    });
+	    if (typeof(args['access_token']) != 'undefined') {
+	        token = args['access_token'];
+	    }
+	callSpotify('https://api.spotify.com/v1/me').then(
+	    function(user) {
+	        user_id = user.id;
+	        uri = user.uri;
+	        location.hash = '';
+	    },
+	    function() {
+	        console.log("Can't get user info");
+	    }
+	);
+}
+
+function makePlaylist() {
+	var url = "https://api.spotify.com/v1/users/" + user_id + "/playlists";
+	var json = {'name': title,
+				"description": "Made using Memoify",
+  				"public": false};
+  	postSpotify(url, json, function(ok, playlist) {
+        if (ok) {
+            saveSongs(playlist, songs);
+        } else {
+        	console.log(playlist);
+          	console.log("Error making playlist");
+        }
+    });
+}
+
+
+function saveSongs(playlist, songs) {
+	play_id = playlist.id;
+    play_url = playlist.external_urls.spotify;
+    var url = "https://api.spotify.com/v1/users/" + user_id +
+         "/playlists/" + playlist.id + '/tracks';
+    postSpotify(url, {'uris': songs}, function(ok, data) {
+        if (ok) {
+            console.log("SUCCESS");
+
+        } else {
+            console.log("Trouble saving to the playlist");
+        }
+    });
+}
+
+
+$(document).ready(
+    function() {
+        authenticate();
+        $("#open_playlist").hide();
+    }
+);
+
+</script>
+</html>

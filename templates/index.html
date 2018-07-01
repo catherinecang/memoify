@@ -30,15 +30,14 @@
 {% if load == True %}
 <div class="all">
   <div class="overview__albums" id="albums">
-    {% for p in playlists %}
+    {% for i in range(playlists|length) %}
   <div class="album">
     <div class="album__info">
     <div class="album__info__meta">
     <div class="album__name"> {{message}}</div>
   </br>
         <div class="album__actions">
-          <a href="https://accounts.spotify.com/authorize?client_id=ab850d0e231e4fe69a0ee40e95792610&response_type=token&scope=playlist-modify-private&redirect_uri=http%3A//127.0.0.1%3A5000/callback">
-          <button id='save' class="button-light save">Save</button>
+          <button id='save_{{i}}' class="button-light save">Save</button>
         </a>
         </div>
         </div>
@@ -56,7 +55,7 @@
               </div>                        
             </div>
             
-          {% for song in p %}
+          {% for song in playlists[i] %}
            <div class="track">
             <div class="track__title"> {{song['name']}}</div>
                   <div class="track__artist"> {{song['artists'][0]['name']}} </div>
@@ -73,6 +72,38 @@
 </body>
 
 <script>
+var songlist = [];
+var fullsongs = JSON.parse('{{data|safe}}');
+var leng = parseInt('{{leng}}');
+{% for j in range(leng) %}
+  $("#save_{{j}}").click(function() {
+    console.log(fullsongs);
+    createlist('{{j}}');
+    console.log('{{j}}');
+    spotilogin();
+  });
+{% endfor %}
 
+function spotilogin() {
+  //do here
+  var client_id = 'ab850d0e231e4fe69a0ee40e95792610';
+  var redirect_uri = 'http://127.0.0.1:5000/callback';
+  var url = 'https://accounts.spotify.com/authorize?client_id=' + client_id +
+      '&response_type=token' +
+      '&scope=playlist-modify-private' +
+      '&redirect_uri=' + encodeURIComponent(redirect_uri);
+  var w = window.open(url, 'asdf', 'WIDTH=400,HEIGHT=500');
+};
+
+
+function createlist(i) {
+  console.log(fullsongs[i]);
+  var j;
+  for (j = 0; j < fullsongs[i].length; j += 1) {
+    songlist.push(fullsongs[i][j]['uri']);
+  }
+  localStorage.setItem('playlist', JSON.stringify(songlist));
+  localStorage.setItem('name', '{{message}}');
+}
 </script>
 </html>
